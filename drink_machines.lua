@@ -1,4 +1,5 @@
 --Craft Recipes
+-- TODO technic variants
 
 minetest.register_craft({
       output = 'drinks:juice_press',
@@ -253,7 +254,7 @@ minetest.register_node('drinks:juice_press', {
       meta:set_string('formspec', press_idle_formspec)
       instack:take_item(tonumber(fruitnumber))
       inv:set_stack('src', 1, instack)
-      inv:set_stack('dst', 1 ,'drinks:'..container..fruit)
+      inv:set_stack('dst', 1 ,'drinks:'..container..fruit) -- FIXME
       end
    end,
    on_metadata_inventory_take = function(pos, listname, index, stack, player)
@@ -315,7 +316,7 @@ function drinks.drinks_liquid_sub(liq_vol, ves_typ, ves_vol, pos, able_to_fill, 
       meta:set_string('formspec', drinks.liquid_storage_formspec(fruit_name, fullness, 256))
    end
    if ves_typ == 'jcu' or ves_typ == 'jbo' or ves_typ == 'jsb' or ves_typ == 'jbu' then
-      inv:set_stack('dst', 1, 'drinks:'..ves_typ..'_'..fruit..' '..able_to_fill)
+      inv:set_stack('dst', 1, 'drinks:'..ves_typ..'_'..fruit..' '..able_to_fill) -- FIXME
       inv:set_stack('src', 1, outputstack..' '..leftover_count)
    elseif ves_typ == 'thirsty:bronze_canteen' then
       inv:set_stack('dst', 1, {name="thirsty:bronze_canteen", count=1, wear=60, metadata=""})
@@ -472,7 +473,7 @@ minetest.register_node('drinks:liquid_barrel', {
          local inputstack = stack:get_name()
          local inputcount = stack:get_count()
          local valid = string.sub(inputstack, 1, 8)
-         if valid == 'drinks:j' then
+         if valid == 'drinks:j' then -- FIXME
             return inputcount
          else
             return 0

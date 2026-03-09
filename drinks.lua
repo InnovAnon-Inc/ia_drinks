@@ -1,65 +1,127 @@
---Parse Table
-for i in ipairs (drinks.drink_table) do
-   local desc = drinks.drink_table[i][1]
-   local craft = drinks.drink_table[i][2]
-   local color = drinks.drink_table[i][3]
-   local health = drinks.drink_table[i][4]
-   health = health or 1
-   -- The color of the drink is all done in code, so we don't need to have multiple images.
+-- drinks/drinks.lua
 
---Actual Node registration
-minetest.register_node('drinks:jbu_'..desc..'', {
-	description = 'Bucket of '..craft..' Juice',
-	drawtype = "plantlike",
-	tiles = {'bucket.png^(drinks_bucket_contents.png^[colorize:'..color..':200)'},
-	inventory_image = 'bucket.png^(drinks_bucket_contents.png^[colorize:'..color..':200)',
-	wield_image = 'bucket.png^(drinks_bucket_contents.png^[colorize:'..color..':200)',
-	paramtype = "light",
-   juice_type = craft,
-	is_ground_content = false,
-	walkable = false,
-	selection_box = {
-		type = "fixed",
-		fixed = {-0.25, -0.5, -0.25, 0.25, 0.4, 0.25}
-	},
-	groups = {vessel=1,dig_immediate=3,attached_node=1, drink = 1},
-	sounds = default.node_sound_defaults(),
-})
+--local function get_on_use(satiates, quenches, return_item)
+--    local heals             = satiates
+--    if minetest.get_modpath('thirsty')   then
+--        return function(itemstack, user, pointed_thing)
+--            thirsty.drink(user, quenches, 20)
+--            local  eat_func = minetest.item_eat(heals, return_item)
+--            return eat_func(itemstack, user, pointed_thing)
+--        end
+--    end
+--    if minetest.get_modpath('hunger_ng') then
+--        return function(itemstack, user, pointed_thing)
+--            -- hunger_ng handles the actual restoration logic; 0 prevents vanilla healing
+--            local  eat_func = minetest.item_eat(0,     return_item)
+--            return eat_func(itemstack, user, pointed_thing)
+--        end
+--    end
+--    -- vanilla
+--    return function(itemstack, user, pointed_thing)
+--        local      eat_func = minetest.item_eat(heals, return_item)
+--        return     eat_func(itemstack, user, pointed_thing)
+--    end
+--end
+--
+---- Helper to register various drink vessels and their hunger/thirst stats
+--local function register_drink_vessel(id, craft, desc, inventory_image, return_item, multiplier)
+--    --minetest.log('drinks.register_drink_vessel(id='..id..')')
+--    local satiates = 2 * multiplier
+--    local quenches = 3 * multiplier
+--    local on_use   = get_on_use(satiates, quenches, return_item)
+--
+--    drinks.register_item(id, return_item, {
+--        description = desc,
+--        groups = {drink = 1},
+--        juice_type = craft,
+--        inventory_image = inventory_image,
+--        on_use = on_use,
+--    })
+--
+--    if minetest.get_modpath("hunger_ng") then
+--        hunger_ng.add_hunger_data(id, {
+--            satiates = satiates,
+--            heals    = 0,
+--            quenches = quenches,
+--            returns  = return_item,
+--        })
+--    end
+--end
 
-drinks.register_item('drinks:jcu_'..desc,  'vessels:drinking_glass', {
-   description = 'Cup of '..craft..' Juice',
-   groups = {drink=1},
-   juice_type = craft,
-   inventory_image = 'drinks_glass_contents.png^[colorize:'..color..':200^drinks_drinking_glass.png',
-   on_use = function(itemstack, user, pointed_thing)
-      thirsty.drink(user, 4, 20)
-      local eat_func = minetest.item_eat(health, 'vessels:drinking_glass')
-      return eat_func(itemstack, user, pointed_thing)
-   end,
-})
+-- Main Registration Loop
+minetest.log('ENTER drinks/drinks.lua')
+for i in ipairs(drinks.drink_table) do
+    local id    = drinks.drink_table[i][1] -- e.g., "apple"
+    local craft = drinks.drink_table[i][2] -- e.g., "Apple"
+    local color = drinks.drink_table[i][3]
 
-drinks.register_item('drinks:jbo_'..desc, 'vessels:glass_bottle',{
-   description = 'Bottle of '..craft..' Juice',
-   groups = {drink = 1},
-   juice_type = craft,
-   inventory_image = 'drinks_bottle_contents.png^[colorize:'..color..':200^drinks_glass_bottle.png',
-   on_use = function(itemstack, user, pointed_thing)
-      thirsty.drink(user, 8, 20)
-      local eat_func = minetest.item_eat((health*2), 'vessels:glass_bottle')
-      return eat_func(itemstack, user, pointed_thing)
-   end,
-})
+    -- 1. Handle Bucket & Liquid (using the lower-level register_liquid0)
+    -- This preserves the drinks mod's specific naming conventions
+    local source_name  = "drinks:flowspec_" .. id .. "_source"
+    local flowing_name = "drinks:flowspec_" .. id .. "_flowing"
+    local bucket_name  = "drinks:jbu_" .. id
+    local name_str     = craft .. " Juice"
 
-drinks.register_item('drinks:jsb_'..desc, 'vessels:steel_bottle',{
-   description = 'Heavy Steel Bottle ('..craft..' Juice)',
-   groups = {drink = 1},
-   juice_type = craft,
-   inventory_image = 'vessels_steel_bottle.png',
-   on_use = function(itemstack, user, pointed_thing)
-      thirsty.drink(user, 8, 20)
-      local eat_func = minetest.item_eat((health*2), 'vessels:steel_bottle')
-      return eat_func(itemstack, user, pointed_thing)
-   end,
-})
+    minetest.log('drinks id          : '..id)
+    --minetest.log('drinks source_name : '..source_name)
+    --minetest.log('drinks flowing_name: '..flowing_name)
+    --minetest.log('drinks bucket_name : '..bucket_name)
+    assert(minetest.registered_nodes[source_name]  == nil, source_name)
+    assert(minetest.registered_nodes[flowing_name] == nil, flowing_name)
+    assert(minetest.registered_nodes[bucket_name]  == nil, bucket_name)
+    assert(minetest.registered_items[bucket_name]  == nil, bucket_name)
 
+    ia_bucket.register_liquid0(
+        source_name,
+        flowing_name,
+        bucket_name,
+        color,
+	100,                           -- node_alpha (should be more transparent)
+        120,                           -- alpha      (should be more opaque)
+        "drinks_bucket_contents.png",  -- inventory_image (inner mask)
+        name_str,
+        {juice = 1, drink = 1}         -- groups
+    )
+    ia_bucket.register_drink_vessels('drinks', color, id, craft)
+
+--    -- 2. Add hunger_ng data for the Bucket (Large capacity)
+--    --if minetest.get_modpath("hunger_ng") then
+--    --    hunger_ng.add_hunger_data(bucket_name, {
+--    --        satiates = 16, -- 2 * 8
+--    --        heals    = 0,
+--    --        quenches = 24, -- 3 * 8
+--    --        returns  = 'bucket:bucket_empty',
+--    --    })
+--    --end
+--
+--    -- 3. Register Cup (jcu)
+--    register_drink_vessel(
+--        'drinks:jcu_' .. id,
+--        craft,
+--        'Cup of ' .. craft .. ' Juice',
+--        'drinks_glass_contents.png^[colorize:' .. color .. ':200^drinks_drinking_glass.png',
+--        'vessels:drinking_glass',
+--        1
+--    )
+--
+--    -- 4. Register Bottle (jbo)
+--    register_drink_vessel(
+--        'drinks:jbo_' .. id,
+--        craft,
+--        'Bottle of ' .. craft .. ' Juice',
+--        'drinks_bottle_contents.png^[colorize:' .. color .. ':200^drinks_glass_bottle.png',
+--        'vessels:glass_bottle',
+--        2
+--    )
+--
+--    -- 5. Register Steel Bottle (jsb)
+--    register_drink_vessel(
+--        'drinks:jsb_' .. id,
+--        craft,
+--        'Heavy Steel Bottle (' .. craft .. ' Juice)',
+--        'vessels_steel_bottle.png',
+--        'vessels:steel_bottle',
+--        2
+--    )
 end
+minetest.log('LEAVE drinks/drinks.lua')

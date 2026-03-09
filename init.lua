@@ -1,5 +1,7 @@
 -- mod support (moreblocks/technic_worldgen)
 local slab_str = "stairs:slab_wood"
+local modname  = minetest.get_current_modname() or 'drinks'
+local modpath  = minetest.get_modpath(modname)
 
 function applyModSupport()
    local moreblocks_found = false
@@ -74,121 +76,214 @@ longname = {
 -- The table should follow this scheme: internal name, Displayed name, colorize code.
 -- Check out the drinks.lua file for more info how how the colorize code is used.
 
-if minetest.get_modpath('default') then
-   drinks.juiceable['apple'] = true -- Name of fruit to make juiceable.
-   drinks.juiceable['cactus'] = true
-   drinks.juiceable['blueberries'] = true
-   table.insert(drinks.drink_table, {'apple', 'Apple', '#ecff56'})
-   table.insert(drinks.drink_table, {'cactus', 'Cactus', '#96F97B'})
-   table.insert(drinks.drink_table, {'blueberries', 'Blueberry', '#521dcb'})
-end
+local priority     = {
+	"ethereal",
+	'fruit',
+	"farming",
+	"crops",
+	'farming_plus',
+	"bushes_classic",
+	"default",
+}
 
-if minetest.get_modpath('bushes_classic') then
-   drinks.juiceable['blackberry'] = true
-   drinks.juiceable['blueberry'] = true
-   drinks.juiceable['gooseberry'] = true
-   drinks.juiceable['raspberry'] = true
-   drinks.juiceable['strawberry'] = true
-   table.insert(drinks.drink_table, {'blackberry', 'Blackberry', '#581845'})
-   table.insert(drinks.drink_table, {'blueberry', 'Blueberry', '#521dcb'})
-   table.insert(drinks.drink_table, {'gooseberry', 'Gooseberry', '#9cf57c'})
-   table.insert(drinks.drink_table, {'raspberry', 'Raspberry', '#C70039'})
-   table.insert(drinks.drink_table, {'strawberry', 'Strawberry', '#ff3636'})
-end
+local juice_config = {
+    apple        = {
+        label   = "Apple",
+        color   = "#ECFF56",
+        sources = {
+	    default        = "default:apple",
+	    ethereal       = "ethereal:apple",
+	},
+    },
+    banana       = {
+	label   = 'Banana',
+        color   = '#ECED9F',
+	sources = {
+	    ethereal       = 'ethereal:banana',
+	    farming_plus   = 'farming_plus:banana',
+	},
+    },
+    blackberries = {
+	label   = 'Blackberry',
+	color   = '#581845',
+	sources = {
+	    bushes_classic = 'bushes_classic:blackberry',
+	    farming        = 'farming:blackberry',
+        },
+    },
+    blueberries  = {
+        label   = "Blueberry",
+        color   = "#521DCB",
+        sources = {
+            bushes_classic = "bushes_classic:blueberry",
+            default        = "default:blueberries",
+            farming        = "farming:blueberries",
+        },
+    },
+    cactus       = {
+        label   = 'Cactus',
+	color   = '#96F97B',
+	sources = {
+	    default        = "default:cactus",
+        },
+    },
+    carrot       = {
+	label   = 'Carrot',
+	color   = '#ED9121',
+	sources = {
+	    farming        = 'farming:carrot',
+	},
+    },
+    coconut      = {
+	label   = 'Coconut',
+	color   = '#FFFFFF',
+	sources = {
+	    ethereal       = 'ethereal:coconut',
+	},
+    },
+    cucumber     = {
+	label   = 'Cucumber',
+	color   = '#73AF59',
+	sources = {
+	    farming        = 'farming:cucumber',
+	},
+    },
+    gooseberry   = {
+        label   = 'Gooseberry',
+	color   = '#9CF57C',
+	sources = {
+	    bushes_classic = 'bushes_classic:gooseberry',
+        },
+    },
+    grapes       = {
+	label   = 'Grape',
+	color   = '#B20056',
+	sources = {
+	    farming        = 'farming:grapes',
+	},
+    },
+    lemon        = {
+	label   = 'Lemon',
+	color   = '#FEFFAA',
+	sources = {
+	    farming_plus   = 'farming_plus:lemon',
+	},
+    },
+    melon        = {
+        label   = 'Melon',
+	color   = '#EF4646',
+	sources = {
+	    crops          = 'crops:melon',
+	    farming        = 'farming:melon',
+	    farming_plus   = 'farming_plus:melon',
+        },
+    },
+    orange      = {
+        label   = 'Orange',
+	color   = '#FFC417',
+	sources = {
+	    ethereal       = 'ethereal:orange',
+	    farming_plus   = 'farming_plus:orange',
+	    fruit          = 'fruit:orange',
+	},
+    },
+    peach        = {
+	label   = 'Peach',
+	color   = '#F2BC1E',
+	sources = {
+	    farming_plus   = 'farming_plus:peach',
+	    fruit          = 'fruit:peach',
+	},
+    },
+    pear         = {
+	label   = 'Pear',
+	color   = 'ECFF56',
+	sources = {
+	    fruit          = 'fruit:pear',
+	},
+    },
+    pineapple    = {
+	label   = 'Pineapple',
+	color   = '#DCD611',
+	sources = {
+	    farming        = 'farming:pineapple',
+	},
+    },
+    plum         = {
+	label   = 'Plum',
+	color   = '#8E4585',
+	sources = {
+	    fruit          = 'fruit:plum',
+	},
+    },
+    pumpkin      = {
+	label   = 'Pumpkin',
+	color   = '#FFC04C',
+	sources = {
+	    crops          = 'crops:pumpkin',
+	    farming        = 'farming:pumpkin',
+	},
+    },
+    raspberry    = {
+	label   = 'Raspberry',
+	color   = '#C70039',
+	sources = {
+	    bushes_classic = 'bushes_classic:raspberry',
+	    farming        = 'farming:raspberries',
+	    farming_plus   = 'farming_plus:raspberry',
+	},
+    },
+    rhubarb      = {
+	label   = 'Rhubarb',
+	color   = '#FB8461',
+	sources = {
+            farming        = 'farming:rhubarb',
+	    farming_plus   = 'farming_plus:rhubarb',
+	},
+    },
+    strawberry   = {
+        label   = "Strawberry",
+        color   = "#FF3636",
+        sources = {
+            bushes_classic = "bushes_classic:strawberry",
+            ethereal       = "ethereal:strawberry",
+            farming        = "farming:strawberry",
+            farming_plus   = "farming_plus:strawberry" -- 
+        }
+    },
+    tomato       = {
+        label   = 'Tomato',
+	color   = '#D03A0E', -- #990000
+	sources = {
+	    crops          = 'crops:tomato',
+	    farming        = 'farming:tomato',
+	    farming_plus   = 'farming_plus:tomato',
+	},
+    },
+}
 
-if minetest.get_modpath('farming_plus') then
-   drinks.juiceable['banana'] = true
-   drinks.juiceable['melon'] = true
-   drinks.juiceable['lemon_item'] = true
-   drinks.juiceable['orange_item'] = true
-   drinks.juiceable['peach_item'] = true
-   drinks.juiceable['rhubarb_item'] = true
-   drinks.juiceable['tomato_item'] = true
-   drinks.juiceable['strawberry_item'] = true
-   drinks.juiceable['raspberry_item'] = true
-   table.insert(drinks.drink_table, {'banana', 'Banana', '#eced9f'})
-   table.insert(drinks.drink_table, {'lemon', 'Lemon', '#feffaa'})
-   table.insert(drinks.drink_table, {'melon', 'Melon', '#ef4646'})
-   table.insert(drinks.drink_table, {'orange', 'Orange', '#ffc417'})
-   table.insert(drinks.drink_table, {'peach', 'Peach', '#f2bc1e'})
-   table.insert(drinks.drink_table, {'rhubarb', 'Rhubarb', '#fb8461'})
-   table.insert(drinks.drink_table, {'tomato', 'Tomato', '#d03a0e'})
-   table.insert(drinks.drink_table, {'strawberry', 'Strawberry', '#ff3636'})
-   table.insert(drinks.drink_table, {'raspberry', 'Raspberry', '#C70039'})
-end
+for flavor_id, data in pairs(juice_config) do
+    local winner, mod = ia_util.resolve_authority(data.sources, priority)
 
-if minetest.get_modpath('crops') then
-   drinks.juiceable['melon'] = true
-   drinks.juiceable['melon_slice'] = true
-   drinks.juiceable['tomato'] = true
-   drinks.juiceable['pumpkin'] = true
-   table.insert(drinks.drink_table, {'melon', 'Melon', '#ef4646'})
-   table.insert(drinks.drink_table, {'tomato', 'Tomato', '#d03a0e'})
-   table.insert(drinks.drink_table, {'pumpkin', 'Pumpkin', '#ffc04c'})
+    if winner then
+        -- Only one entry per flavor_id is possible here
+        drinks.juiceable[winner] = true
+        table.insert(drinks.drink_table, {flavor_id, data.label, data.color})
+    end
 end
 
 if minetest.get_modpath('farming') then
-   drinks.juiceable['melon_8'] = true
-   drinks.juiceable['melon_slice'] = true
-   drinks.juiceable['tomato'] = true
-   drinks.juiceable['carrot'] = true
-   drinks.juiceable['cucumber'] = true
-   drinks.juiceable['grapes'] = true
-   drinks.juiceable['pumpkin_8'] = true
-   drinks.juiceable['pumpkin_slice'] = true
-   drinks.juiceable['raspberries'] = true
-   drinks.juiceable['rhubarb'] = true
-   drinks.juiceable['blueberries'] = true
-   drinks.juiceable['pineapple'] = true
-   drinks.juiceable['pineapple_ring'] = true
-   drinks.juiceable['blueberries'] = true
-   drinks.juiceable['blackberry'] = true
-   drinks.juiceable['strawberry'] = true
-   table.insert(drinks.drink_table, {'melon', 'Melon', '#ef4646'})
-   table.insert(drinks.drink_table, {'tomato', 'Tomato', '#990000'})
-   table.insert(drinks.drink_table, {'carrot', 'Carrot', '#ed9121'})
-   table.insert(drinks.drink_table, {'cucumber', 'Cucumber', '#73af59'})
-   table.insert(drinks.drink_table, {'grapes', 'Grape', '#b20056'})
-   table.insert(drinks.drink_table, {'pumpkin', 'Pumpkin', '#ffc04c'})
-   table.insert(drinks.drink_table, {'raspberries', 'Raspberry', '#C70039'})
-   table.insert(drinks.drink_table, {'rhubarb', 'Rhubarb', '#fb8461'})
-   table.insert(drinks.drink_table, {'blueberries', 'Blueberry', '#521dcb'})
-   table.insert(drinks.drink_table, {'pineapple', 'Pineapple', '#dcd611'})
-   table.insert(drinks.drink_table, {'blueberries', 'Blueberry', '#521dcb'})
-   table.insert(drinks.drink_table, {'blackberry', 'Blackberry', '#581845'})
-   table.insert(drinks.drink_table, {'strawberry', 'Strawberry', '#ff3636'})
-   minetest.register_alias_force('farming:carrot_juice', 'drinks:jcu_carrot')
+   minetest.register_alias_force('farming:carrot_juice',    'drinks:jcu_carrot')
    minetest.register_alias_force('farming:pineapple_juice', 'drinks:jcu_pineapple')
-end
-
-if minetest.get_modpath('fruit') then
-   drinks.juiceable['pear'] = true
-   drinks.juiceable['plum'] = true
-   drinks.juiceable['peach'] = true
-   drinks.juiceable['orange'] = true
-   table.insert(drinks.drink_table, {'pear', 'Pear', '#ecff56'})
-   table.insert(drinks.drink_table, {'plum', 'Plum', '#8e4585'})
-   table.insert(drinks.drink_table, {'peach', 'Peach', '#f2bc1e'})
-   table.insert(drinks.drink_table, {'orange', 'Orange', '#ffc417'})
-end
-
-if minetest.get_modpath('ethereal') then
-   drinks.juiceable['banana'] = true
-   drinks.juiceable['coconut'] = true
-   drinks.juiceable['coconut_slice'] = true
-   drinks.juiceable['orange'] = true
-   drinks.juiceable['strawberry'] = true
-   table.insert(drinks.drink_table, {'banana', 'Banana', '#eced9f'})
-   table.insert(drinks.drink_table, {'coconut', 'Coconut', '#ffffff'})
-   table.insert(drinks.drink_table, {'orange', 'Orange', '#ffc417'})
-   table.insert(drinks.drink_table, {'strawberry', 'Strawberry', '#ff3636'})
 end
 
 -- replace craftitem to node definition
 -- use existing node as template (e.g. 'vessel:glass_bottle')
 drinks.register_item = function( name, template, def )
    local template_def = minetest.registered_nodes[template]
-   if template_def then
+   assert(template_def                    ~= nil)
+   assert(minetest.registered_nodes[name] == nil)
+   --if template_def then
    local drinks_def = table.copy(template_def)
 
    -- replace/add values
@@ -209,14 +304,15 @@ drinks.register_item = function( name, template, def )
    end
 
    minetest.register_node( name, drinks_def )
-   end
+   --end
 end
 
 
-if minetest.get_modpath('thirsty') then
-   dofile(minetest.get_modpath('drinks')..'/drinks.lua')
-else
-   dofile(minetest.get_modpath('drinks')..'/drinks2.lua')
-end
-dofile(minetest.get_modpath('drinks')..'/drink_machines.lua')
-dofile(minetest.get_modpath('drinks')..'/formspecs.lua')
+--if minetest.get_modpath('thirsty') then
+--   dofile(minetest.get_modpath('drinks')..'/drinks.lua')
+--else
+--   dofile(minetest.get_modpath('drinks')..'/drinks2.lua')
+--end
+dofile(modpath..DIR_DELIM..'drinks.lua')
+dofile(modpath..DIR_DELIM..'drink_machines.lua')
+dofile(modpath..DIR_DELIM..'formspecs.lua')
