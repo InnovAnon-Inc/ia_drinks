@@ -68,6 +68,7 @@ longname = {
    ['thirsty:bronze_canteen'] = {size = 30, name = 'thirsty:bronze_canteen'},
 },
 }
+drinks.mod = 'ia'
 
 
 -- Honestly not needed for default, but used as an example to add support to other mods.
@@ -279,33 +280,33 @@ end
 
 -- replace craftitem to node definition
 -- use existing node as template (e.g. 'vessel:glass_bottle')
-drinks.register_item = function( name, template, def )
-   local template_def = minetest.registered_nodes[template]
-   assert(template_def                    ~= nil)
-   assert(minetest.registered_nodes[name] == nil)
-   --if template_def then
-   local drinks_def = table.copy(template_def)
-
-   -- replace/add values
-   for k,v in pairs(def) do
-      if k == "groups" then
-         -- special handling for groups: merge instead replace
-         for g,n in pairs(v) do
-            drinks_def[k][g] = n
-         end
-      else
-         drinks_def[k]=v
-      end
-   end
-
-   if def.inventory_image then
-      drinks_def.wield_image = drinks_def.inventory_image
-      drinks_def.tiles = { drinks_def.inventory_image }
-   end
-
-   minetest.register_node( name, drinks_def )
-   --end
-end
+--drinks.register_item = function( name, template, def )
+--   local template_def = minetest.registered_nodes[template]
+--   assert(template_def                    ~= nil)
+--   assert(minetest.registered_nodes[name] == nil)
+--   --if template_def then
+--   local drinks_def = table.copy(template_def)
+--
+--   -- replace/add values
+--   for k,v in pairs(def) do
+--      if k == "groups" then
+--         -- special handling for groups: merge instead replace
+--         for g,n in pairs(v) do
+--            drinks_def[k][g] = n
+--         end
+--      else
+--         drinks_def[k]=v
+--      end
+--   end
+--
+--   if def.inventory_image then
+--      drinks_def.wield_image = drinks_def.inventory_image
+--      drinks_def.tiles = { drinks_def.inventory_image }
+--   end
+--
+--   minetest.register_node( name, drinks_def )
+--   --end
+--end
 
 
 --if minetest.get_modpath('thirsty') then
