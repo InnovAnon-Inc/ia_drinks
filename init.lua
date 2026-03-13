@@ -1,3 +1,4 @@
+-- ia_drinks/init.lua
 -- mod support (moreblocks/technic_worldgen)
 local slab_str = "stairs:slab_wood"
 local modname  = minetest.get_current_modname() or 'drinks'
@@ -26,7 +27,7 @@ function applyModSupport()
       slab_str = "moreblocks:slab_wood"
    end
 end
---applyModSupport()
+--applyModSupport() -- NOTE was commented out in original
 
 --Craft Recipes
 
@@ -51,25 +52,31 @@ minetest.register_craft({
 })
 
 drinks = {
-drink_table = {},
-juiceable = {},
-shortname = {
-   ['jcu'] = {size = 2, name = 'vessels:drinking_glass'},
-   ['jbo'] = {size = 4, name = 'vessels:glass_bottle'},
-   ['jsb'] = {size = 4, name = 'vessels:steel_bottle'},
-   ['jbu'] = {size = 16, name = 'bucket:bucket_empty'}
-},
-longname = {
-   ['vessels:drinking_glass'] = {size = 2, name = 'jcu'},
-   ['vessels:glass_bottle'] = {size = 4, name = 'jbo'},
-   ['vessels:steel_bottle'] = {size = 4, name = 'jsb'},
-   ['bucket:bucket_empty'] = {size = 16, name = 'jbu'},
-   ['thirsty:steel_canteen'] = {size = 20, name = 'thirsty:steel_canteen'},
-   ['thirsty:bronze_canteen'] = {size = 30, name = 'thirsty:bronze_canteen'},
-},
+  drink_table = {},
+  juiceable   = {},
+  shortname   = {
+    ['jcu']                               = {size =  2, name = 'vessels:drinking_glass'},
+    ['jbo']                               = {size =  4, name = 'vessels:glass_bottle'},
+    ['jsb']                               = {size =  4, name = 'vessels:steel_bottle'},
+    ['jbu']                               = {size = 16, name = 'bucket:bucket_empty'},
+  },
+  longname    = {
+    ['vessels:drinking_glass']            = {size =  2, name = 'jcu'},
+    ['vessels:glass_bottle']              = {size =  4, name = 'jbo'},
+    ['vessels:steel_bottle']              = {size =  4, name = 'jsb'},
+    ['bucket:bucket_empty']               = {size = 16, name = 'jbu'},
+  },
 }
 drinks.mod = 'ia'
 
+if ia_util.has_wooden_bucket_redo() then
+    drinks.shortname['jbw']                               = {size = 16, name = 'wooden_bucket:bucket_wood_empty'}
+    drinks.longname ['wooden_bucket:bucket_wood_empty']   = {size = 16, name = 'jbw'}
+end
+if minetest.get_modpath('thirsty') then
+    drinks.longname ['thirsty:steel_canteen']             = {size = 20, name = 'thirsty:steel_canteen'}
+    drinks.longname ['thirsty:bronze_canteen']            = {size = 30, name = 'thirsty:bronze_canteen'}
+end
 
 -- Honestly not needed for default, but used as an example to add support to other mods.
 -- Basically to use this all you need to do is add the name of the fruit to make juiceable (see line 14 for example)
@@ -269,7 +276,11 @@ for flavor_id, data in pairs(juice_config) do
     if winner then
         -- Only one entry per flavor_id is possible here
         drinks.juiceable[winner] = true
+        --drinks.juiceable[flavor_id] = true
         table.insert(drinks.drink_table, {flavor_id, data.label, data.color})
+	minetest.log('juiceable: '..tostring(winner))
+    else
+	minetest.log('NOT juiceable: '..tostring(flavor_id))
     end
 end
 
@@ -277,6 +288,24 @@ if minetest.get_modpath('farming') then
    minetest.register_alias_force('farming:carrot_juice',    'drinks:jcu_carrot')
    minetest.register_alias_force('farming:pineapple_juice', 'drinks:jcu_pineapple')
 end
+
+---- Bridge table for industrial automation
+--drinks.automation_recipes = {
+--    fruits  = {},    -- ["default:apple"] = "apple"
+--    vessels = {},   -- ["vessels:drinking_glass"] = "jcu", ["vessels:glass_bottle"] = "jbo"
+--}
+--
+---- 1. Populate valid fruits from the juice_config logic
+--for flavor_id, _ in pairs(juice_config) do
+--    for _, item_string in pairs(juice_config[flavor_id].sources) do
+--        drinks.automation_recipes.fruits[item_string] = flavor_id
+--    end
+--end
+--
+---- 2. Populate valid vessels from the shortname/longname structure
+--for long_name, data in pairs(drinks.longname) do
+--    drinks.automation_recipes.vessels[long_name] = data.name
+--end
 
 -- replace craftitem to node definition
 -- use existing node as template (e.g. 'vessel:glass_bottle')
@@ -308,12 +337,13 @@ end
 --   --end
 --end
 
-
 --if minetest.get_modpath('thirsty') then
 --   dofile(minetest.get_modpath('drinks')..'/drinks.lua')
 --else
 --   dofile(minetest.get_modpath('drinks')..'/drinks2.lua')
 --end
 dofile(modpath..DIR_DELIM..'drinks.lua')
-dofile(modpath..DIR_DELIM..'drink_machines.lua')
+--dofile(modpath..DIR_DELIM..'drink_machines.lua')
+dofile(modpath..DIR_DELIM..'juice_press.lua')
+dofile(modpath..DIR_DELIM..'drink_storage.lua')
 dofile(modpath..DIR_DELIM..'formspecs.lua')

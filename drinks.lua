@@ -1,4 +1,4 @@
----- drinks/drinks.lua
+-- ia_drinks/drinks.lua
 --assert(ia_util.has_placeable_buckets_redo())
 --
 ----local function get_on_use(satiates, quenches, return_item)
@@ -212,9 +212,10 @@ for i in ipairs(drinks.drink_table) do
         id,            -- item_id (used to generate :jcu_id, :jbo_id, etc.)
         name_str,      -- name
         {juice = 1, drink = 1}, -- groups
-        'default:water_source', 'default:water_flowing')
+        'default:water_source', 'default:water_flowing', 'drinks:jbu_'..id, 'drinks:jbw_'..id)
     placeable_buckets.register_drink_vessels('drinks', color, id, name_str, 1, 0,
-        'drinks:'..id..'_source', 'drinks:'..id..'_flowing', 'drinks:bucket_'..id, 'drinks:bucket_wooden_'..id)
+        --'drinks:'..id..'_source', 'drinks:'..id..'_flowing', 'drinks:bucket_'..id, 'drinks:bucket_wooden_'..id)
+        'drinks:'..id..'_source', 'drinks:'..id..'_flowing', 'drinks:jbu_'..id, 'drinks:jbw_'..id)
         --'default:water_source', 'default:water_flowing')
 end
 

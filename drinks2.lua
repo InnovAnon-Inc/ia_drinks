@@ -1,3 +1,4 @@
+-- ia_drinks/drinks2.lua
 -- This code is for if Thirst isn't enabled.
 --Parse Table
 for i in ipairs (drinks.drink_table) do

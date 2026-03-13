@@ -1,3 +1,4 @@
+-- ia_drinks/drink_machines.lua
 --Craft Recipes
 -- TODO technic variants
 
@@ -67,6 +68,124 @@ local press_error_formspec =
    'list[current_name;dst;6.5,1.5;1,1;]'..
    'list[current_player;main;0,3;8,4;]'
 
+local function juice_press_on_receive_fields_need_more_fruit(meta)
+	meta:set_string('infotext', 'You need more fruit.')
+	meta:set_string('formspec', press_error_formspec)
+	return false
+end
+local function juice_press_on_receive_fields_drinking_glass(instack, meta, timer)
+	if instack:get_count() < 4 then
+		return juice_press_on_receive_fields_need_more_fruit(meta)
+	end
+	meta:set_string('container', 'jcu_')
+	meta:set_string('fruitnumber', 4)
+	meta:set_string('infotext', 'Juicing...')
+	meta:set_string('formspec', press_running_formspec)
+	timer:start(4)
+	return true
+end
+
+local function juice_press_on_receive_fields_glass_bottle(instack, meta, timer)
+	if instack:get_count() < 8 then
+		return juice_press_on_receive_fields_need_more_fruit(meta)
+	end
+	meta:set_string('container', 'jbo_')
+	meta:set_string('fruitnumber', 8)
+	meta:set_string('infotext', 'Juicing...')
+	meta:set_string('formspec', press_running_formspec)
+	timer:start(8)
+	return true
+end
+
+local function juice_press_on_receive_fields_steel_bottle(instack, meta, timer)
+	if instack:get_count() < 8 then
+		return juice_press_on_receive_fields_need_more_fruit(meta)
+	end
+	meta:set_string('container', 'jsb_')
+	meta:set_string('fruitnumber', 8)
+	meta:set_string('infotext', 'Juicing...')
+	meta:set_string('formspec', press_running_formspec)
+	timer:start(8)
+	return true
+end
+
+local function juice_press_on_receive_fields_bucket(instack, meta, timer)
+	if instack:get_count() < 16 then
+		return juice_press_on_receive_fields_need_more_fruit(meta)
+	end
+	meta:set_string('container', 'jbu_')
+	meta:set_string('fruitnumber', 16)
+	meta:set_string('infotext', 'Juicing...')
+	meta:set_string('formspec', press_running_formspec)
+	timer:start(16)
+	return true
+end
+
+local function juice_press_on_receive_fields_wooden_bucket(instack, meta, timer)
+	if instack:get_count() < 16 then
+		return juice_press_on_receive_fields_need_more_fruit(meta)
+	end
+	meta:set_string('container', 'jbw_')
+	meta:set_string('fruitnumber', 16)
+	meta:set_string('infotext', 'Juicing...')
+	meta:set_string('formspec', press_running_formspec)
+	timer:start(16)
+	return true
+end
+
+local function juice_press_on_receive_fields_papyrus(instack, meta, timer)
+	if instack:get_count() < 2 then
+		return juice_press_on_receive_fields_need_more_fruit(meta)
+	end
+	local under_node = {x=pos.x, y=pos.y-1, z=pos.z}
+	local under_node_name = minetest.get_node_or_nil(under_node)
+	local under_node_2 = {x=pos.x, y=pos.y-2, z=pos.z}
+	local under_node_name_2 = minetest.get_node_or_nil(under_node_2)
+	if under_node_name.name == 'drinks:liquid_barrel' then
+		local meta_u = minetest.get_meta(under_node)
+		local stored_fruit = meta_u:get_string('fruit')
+		if fruit == stored_fruit or stored_fruit == 'empty' then
+			meta:set_string('container', 'tube')
+			meta:set_string('fruitnumber', 2)
+			meta:set_string('infotext', 'Juicing...')
+			meta_u:set_string('fruit', fruit)
+			timer:start(4)
+		else
+			meta:set_string('infotext', "You can't mix juices.")
+		end
+		return true
+	end
+	if under_node_name_2.name == 'drinks:liquid_silo' then
+		local meta_u = minetest.get_meta(under_node_2)
+		local stored_fruit = meta_u:get_string('fruit')
+		if fruit == stored_fruit or stored_fruit == 'empty' then
+			meta:set_string('container', 'tube')
+			meta:set_string('fruitnumber', 2)
+			meta:set_string('infotext', 'Juicing...')
+			meta_u:set_string('fruit', fruit)
+			timer:start(4)
+		else
+			meta:set_string('infotext', "You can't mix juices.")
+		end
+		return true
+	end
+	-- NOTE the original displayed the 'need more fruit' path
+	meta:set_string('infotext', 'When using papyrus in the output stack (dst), you must place a barrel or silo below this node')
+	meta:set_string('formspec', press_error_formspec)
+	return false
+end
+
+local juice_press_on_receive_fields_dispatch_table = {
+    ['vessels:drinking_glass']                                                        = juice_press_on_receive_fields_drinking_glass,
+    ['vessels:glass_bottle']                                                          = juice_press_on_receive_fields_glass_bottle,
+    ['vessels:steel_bottle']                                                          = juice_press_on_receive_fields_steel_bottle,
+    ['bucket:bucket_empty']                                                           = juice_press_on_receive_fields_bucket,
+    ['default:papyrus']                                                               = juice_press_on_receive_fields_papyrus,
+}
+if ia_util.has_wooden_bucket_redo() then
+    juice_press_on_receive_fields_dispatch_table['wooden_bucket:bucket_wood_empty']   = juice_press_on_receive_fields_wooden_bucket
+end
+
 minetest.register_node('drinks:juice_press', {
    description = 'Juice Press',
    _doc_items_longdesc = "A machine for creating drinks out of various fruits and vegetables.",
@@ -111,86 +230,106 @@ minetest.register_node('drinks:juice_press', {
             end
             local outstack = inv:get_stack("dst", 1)
             local vessel = outstack:get_name()
-            if vessel == 'vessels:drinking_glass' then
-               if instack:get_count() >= 4 then
-                  meta:set_string('container', 'jcu_')
-                  meta:set_string('fruitnumber', 4)
-                  meta:set_string('infotext', 'Juicing...')
-                  meta:set_string('formspec', press_running_formspec)
-                  timer:start(4)
-               else
-                  meta:set_string('infotext', 'You need more fruit.')
-                  meta:set_string('formspec', press_error_formspec)
-               end
-            elseif vessel == 'vessels:glass_bottle' then
-               if instack:get_count() >= 8 then
-                  meta:set_string('container', 'jbo_')
-                  meta:set_string('fruitnumber', 8)
-                  meta:set_string('infotext', 'Juicing...')
-                  meta:set_string('formspec', press_running_formspec)
-                  timer:start(8)
-               else
-                  meta:set_string('infotext', 'You need more fruit.')
-                  meta:set_string('formspec', press_error_formspec)
-               end
-            elseif vessel == 'vessels:steel_bottle' then
-               if instack:get_count() >= 8 then
-                  meta:set_string('container', 'jsb_')
-                  meta:set_string('fruitnumber', 8)
-                  meta:set_string('infotext', 'Juicing...')
-                  meta:set_string('formspec', press_running_formspec)
-                  timer:start(8)
-               else
-                  meta:set_string('infotext', 'You need more fruit.')
-                  meta:set_string('formspec', press_error_formspec)
-               end
-            elseif vessel == 'bucket:bucket_empty' then
-               if instack:get_count() >= 16 then
-                  meta:set_string('container', 'jbu_')
-                  meta:set_string('fruitnumber', 16)
-                  meta:set_string('infotext', 'Juicing...')
-                  meta:set_string('formspec', press_running_formspec)
-                  timer:start(16)
-               else
-                  meta:set_string('infotext', 'You need more fruit.')
-                  meta:set_string('formspec', press_error_formspec)
-               end
-            elseif vessel == 'default:papyrus' then
-               if instack:get_count() >= 2 then
-                  local under_node = {x=pos.x, y=pos.y-1, z=pos.z}
-                  local under_node_name = minetest.get_node_or_nil(under_node)
-                  local under_node_2 = {x=pos.x, y=pos.y-2, z=pos.z}
-                  local under_node_name_2 = minetest.get_node_or_nil(under_node_2)
-                  if under_node_name.name == 'drinks:liquid_barrel' then
-                     local meta_u = minetest.get_meta(under_node)
-                     local stored_fruit = meta_u:get_string('fruit')
-                     if fruit == stored_fruit or stored_fruit == 'empty' then
-                        meta:set_string('container', 'tube')
-                        meta:set_string('fruitnumber', 2)
-                        meta:set_string('infotext', 'Juicing...')
-                        meta_u:set_string('fruit', fruit)
-                        timer:start(4)
-                     else
-                        meta:set_string('infotext', "You can't mix juices.")
-                     end
-                  elseif under_node_name_2.name == 'drinks:liquid_silo' then
-                     local meta_u = minetest.get_meta(under_node_2)
-                     local stored_fruit = meta_u:get_string('fruit')
-                     if fruit == stored_fruit or stored_fruit == 'empty' then
-                        meta:set_string('container', 'tube')
-                        meta:set_string('fruitnumber', 2)
-                        meta:set_string('infotext', 'Juicing...')
-                        meta_u:set_string('fruit', fruit)
-                        timer:start(4)
-                     else
-                        meta:set_string('infotext', "You can't mix juices.")
-                     end
-                  else
-                     meta:set_string('infotext', 'You need more fruit.')
-                     meta:set_string('formspec', press_error_formspec)
-                  end
-               end
+            local dispatch = juice_press_on_receive_fields_dispatch_table[vessel]
+	    local result
+            if dispatch ~= nil then
+                result     = dispatch(instack, meta, timer)
+            else
+                meta:set_string('infotext', 'Unsupported ')
+                meta:set_string('formspec', press_error_formspec)
+                result     = false
             end
+--            if vessel == 'vessels:drinking_glass' then
+--               if instack:get_count() >= 4 then
+--                  meta:set_string('container', 'jcu_')
+--                  meta:set_string('fruitnumber', 4)
+--                  meta:set_string('infotext', 'Juicing...')
+--                  meta:set_string('formspec', press_running_formspec)
+--                  timer:start(4)
+--               else
+--                  meta:set_string('infotext', 'You need more fruit.')
+--                  meta:set_string('formspec', press_error_formspec)
+--               end
+--            elseif vessel == 'vessels:glass_bottle' then
+--               if instack:get_count() >= 8 then
+--                  meta:set_string('container', 'jbo_')
+--                  meta:set_string('fruitnumber', 8)
+--                  meta:set_string('infotext', 'Juicing...')
+--                  meta:set_string('formspec', press_running_formspec)
+--                  timer:start(8)
+--               else
+--                  meta:set_string('infotext', 'You need more fruit.')
+--                  meta:set_string('formspec', press_error_formspec)
+--               end
+--            elseif vessel == 'vessels:steel_bottle' then
+--               if instack:get_count() >= 8 then
+--                  meta:set_string('container', 'jsb_')
+--                  meta:set_string('fruitnumber', 8)
+--                  meta:set_string('infotext', 'Juicing...')
+--                  meta:set_string('formspec', press_running_formspec)
+--                  timer:start(8)
+--               else
+--                  meta:set_string('infotext', 'You need more fruit.')
+--                  meta:set_string('formspec', press_error_formspec)
+--               end
+--            elseif vessel == 'bucket:bucket_empty' then
+--               if instack:get_count() >= 16 then
+--                  meta:set_string('container', 'jbu_')
+--                  meta:set_string('fruitnumber', 16)
+--                  meta:set_string('infotext', 'Juicing...')
+--                  meta:set_string('formspec', press_running_formspec)
+--                  timer:start(16)
+--               else
+--                  meta:set_string('infotext', 'You need more fruit.')
+--                  meta:set_string('formspec', press_error_formspec)
+--               end
+--	    elseif vessel == 'wooden_bucket:bucket_wood_empty' then
+--               if instack:get_count() >= 16 then
+--                  meta:set_string('container', 'jbw_')
+--                  meta:set_string('fruitnumber', 16)
+--                  meta:set_string('infotext', 'Juicing...')
+--                  meta:set_string('formspec', press_running_formspec)
+--                  timer:start(16)
+--               else
+--                  meta:set_string('infotext', 'You need more fruit.')
+--                  meta:set_string('formspec', press_error_formspec)
+--               end
+--            elseif vessel == 'default:papyrus' then
+--               if instack:get_count() >= 2 then
+--                  local under_node = {x=pos.x, y=pos.y-1, z=pos.z}
+--                  local under_node_name = minetest.get_node_or_nil(under_node)
+--                  local under_node_2 = {x=pos.x, y=pos.y-2, z=pos.z}
+--                  local under_node_name_2 = minetest.get_node_or_nil(under_node_2)
+--                  if under_node_name.name == 'drinks:liquid_barrel' then
+--                     local meta_u = minetest.get_meta(under_node)
+--                     local stored_fruit = meta_u:get_string('fruit')
+--                     if fruit == stored_fruit or stored_fruit == 'empty' then
+--                        meta:set_string('container', 'tube')
+--                        meta:set_string('fruitnumber', 2)
+--                        meta:set_string('infotext', 'Juicing...')
+--                        meta_u:set_string('fruit', fruit)
+--                        timer:start(4)
+--                     else
+--                        meta:set_string('infotext', "You can't mix juices.")
+--                     end
+--                  elseif under_node_name_2.name == 'drinks:liquid_silo' then
+--                     local meta_u = minetest.get_meta(under_node_2)
+--                     local stored_fruit = meta_u:get_string('fruit')
+--                     if fruit == stored_fruit or stored_fruit == 'empty' then
+--                        meta:set_string('container', 'tube')
+--                        meta:set_string('fruitnumber', 2)
+--                        meta:set_string('infotext', 'Juicing...')
+--                        meta_u:set_string('fruit', fruit)
+--                        timer:start(4)
+--                     else
+--                        meta:set_string('infotext', "You can't mix juices.")
+--                     end
+--                  else
+--                     meta:set_string('infotext', 'You need more fruit.')
+--                     meta:set_string('formspec', press_error_formspec)
+--                  end
+--               end
+--            end
          end
       end
    end,
@@ -254,7 +393,7 @@ minetest.register_node('drinks:juice_press', {
       meta:set_string('formspec', press_idle_formspec)
       instack:take_item(tonumber(fruitnumber))
       inv:set_stack('src', 1, instack)
-      inv:set_stack('dst', 1 ,'drinks:'..container..fruit) -- FIXME
+      inv:set_stack('dst', 1 ,'drinks:'..container..fruit) -- 
       end
    end,
    on_metadata_inventory_take = function(pos, listname, index, stack, player)
@@ -283,6 +422,8 @@ minetest.register_node('drinks:juice_press', {
    allow_metadata_inventory_put = function(pos, listname, index, stack, player)
       if listname == 'dst' then
          if stack:get_name() == ('bucket:bucket_empty') then
+            return 1
+         elseif stack:get_name() == ('wooden_bucket:bucket_wood_empty') then
             return 1
          elseif stack:get_name() == ('vessels:drinking_glass') then
             return 1
@@ -315,8 +456,8 @@ function drinks.drinks_liquid_sub(liq_vol, ves_typ, ves_vol, pos, able_to_fill, 
    elseif ves_vol == 256 then
       meta:set_string('formspec', drinks.liquid_storage_formspec(fruit_name, fullness, 256))
    end
-   if ves_typ == 'jcu' or ves_typ == 'jbo' or ves_typ == 'jsb' or ves_typ == 'jbu' then
-      inv:set_stack('dst', 1, 'drinks:'..ves_typ..'_'..fruit..' '..able_to_fill) -- FIXME
+   if ves_typ == 'jcu' or ves_typ == 'jbo' or ves_typ == 'jsb' or ves_typ == 'jbu' or ves_typ == 'jbw' then
+      inv:set_stack('dst', 1, 'drinks:'..ves_typ..'_'..fruit..' '..able_to_fill) -- 
       inv:set_stack('src', 1, outputstack..' '..leftover_count)
    elseif ves_typ == 'thirsty:bronze_canteen' then
       inv:set_stack('dst', 1, {name="thirsty:bronze_canteen", count=1, wear=60, metadata=""})
@@ -473,7 +614,7 @@ minetest.register_node('drinks:liquid_barrel', {
          local inputstack = stack:get_name()
          local inputcount = stack:get_count()
          local valid = string.sub(inputstack, 1, 8)
-         if valid == 'drinks:j' then -- FIXME
+         if valid == 'drinks:j' then -- 
             return inputcount
          else
             return 0
@@ -485,7 +626,7 @@ minetest.register_node('drinks:liquid_barrel', {
             local inputstack = stack:get_name()
             local inputcount = stack:get_count()
             local valid = string.sub(inputstack, 1, 7)
-            if valid == 'vessels' or valid == 'bucket:' then
+            if valid == 'vessels' or valid == 'bucket:' or valid == 'wooden_bucket:' then
                return inputcount
             else
                return 0
@@ -590,7 +731,7 @@ minetest.register_node('drinks:liquid_silo', {
          local inputstack = stack:get_name()
          local inputcount = stack:get_count()
          local valid = string.sub(inputstack, 1, 8)
-         if valid == 'drinks:j' then
+         if valid == 'drinks:j' then -- 
             return inputcount
          else
             return 0
@@ -602,7 +743,7 @@ minetest.register_node('drinks:liquid_silo', {
             local inputstack = stack:get_name()
             local inputcount = stack:get_count()
             local valid = string.sub(inputstack, 1, 7)
-            if valid == 'vessels' or valid == 'bucket:' then
+            if valid == 'vessels' or valid == 'bucket:' or valid == 'wooden_bucket:' then
                return inputcount
             else
                return 0

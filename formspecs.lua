@@ -1,3 +1,5 @@
+-- ia_drinks/formspecs.lua
+
 function drinks.liquid_storage_formspec(fruit_name, fullness, max)
 	local formspec =
    'size[8,8]'..
