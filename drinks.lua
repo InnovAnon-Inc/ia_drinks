@@ -217,6 +217,18 @@ for i in ipairs(drinks.drink_table) do
         --'drinks:'..id..'_source', 'drinks:'..id..'_flowing', 'drinks:bucket_'..id, 'drinks:bucket_wooden_'..id)
         'drinks:'..id..'_source', 'drinks:'..id..'_flowing', 'drinks:jbu_'..id, 'drinks:jbw_'..id)
         --'default:water_source', 'default:water_flowing')
+
+    local jcu_def         = minetest.registered_items['drinks:jcu_'..id]
+    jcu_def.juice_type    = craft
+    local jbo_def         = minetest.registered_items['drinks:jbo_'..id]
+    jbo_def.juice_type    = craft
+    local jsb_def         = minetest.registered_items['drinks:jsb_'..id]
+    jsb_def.juice_type    = craft
+    local jbu_def         = minetest.registered_items['drinks:jbu_'..id]
+    jbu_def.juice_type    = craft
+    local jbw_def         = minetest.registered_items['drinks:jbw_'..id]
+    jbw_def.juice_type    = craft
+    
     local mash_id = "drinks:mash_" .. id
     minetest.register_craftitem(mash_id, {
         description     = craft .. " Fruit Mash",

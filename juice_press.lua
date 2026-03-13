@@ -259,7 +259,6 @@ minetest.register_node('drinks:juice_press', {
       --local outstack = inv:get_stack("dst", 1) -- not used
       local fruit = meta:get_string('fruit')
       local fruitnumber = tonumber(meta:get_string('fruitnumber'))
-      -- TODO output fruit mash to second output slot
       if container == 'tube' then
          local timer = minetest.get_node_timer(pos)
          local under_node = {x=pos.x, y=pos.y-1, z=pos.z}
