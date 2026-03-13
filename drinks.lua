@@ -217,6 +217,30 @@ for i in ipairs(drinks.drink_table) do
         --'drinks:'..id..'_source', 'drinks:'..id..'_flowing', 'drinks:bucket_'..id, 'drinks:bucket_wooden_'..id)
         'drinks:'..id..'_source', 'drinks:'..id..'_flowing', 'drinks:jbu_'..id, 'drinks:jbw_'..id)
         --'default:water_source', 'default:water_flowing')
+    local mash_id = "drinks:mash_" .. id
+    minetest.register_craftitem(mash_id, {
+        description     = craft .. " Fruit Mash",
+        inventory_image = "drinks_fruit_mash.png^[colorize:" .. color .. ":120",
+        groups          = {food = 1,}, -- compostable = 1, flammable = 2,
+        on_use          = minetest.item_eat(1), -- It's edible but not great
+        --_compost        = { -- TODO
+        --  amount = amount,
+        --  C      = C,
+        --  N      = N,
+        --},
+--	_hunger_ng        = { -- TODO
+--         heals    = n,
+--         satiates = n,
+--         digests  = n|nil,
+--         rests    = n,
+--         quenches = n,
+--         hydrates = n|nil,
+--         returns  = 'id'
+--     },
+    })
+    if minetest.get_modpath('biofuel') then
+        biomass.convertible_items[mash_id] = true
+    end
 end
 
 minetest.log('LEAVE drinks/drinks.lua')

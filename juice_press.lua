@@ -1,5 +1,6 @@
 -- ia_drinks/juice_press.lua
 --Craft Recipes
+-- TODO bulk storage compat
 
 minetest.register_craft({
       output = 'drinks:juice_press',
@@ -20,7 +21,8 @@ local press_idle_formspec =
    'label[0.2,2.4;16 fruits to a bucket.]'..
    'button[1,1;2,1;press;Start Juicing]'..
    'list[current_name;src;6.5,.5;1,1;]'..
-   'list[current_name;dst;6.5,1.5;1,1;]'..
+   --'list[current_name;dst;6.5,1.5;1,1;]'..
+   'list[current_name;dst;6.5,1.5;2,1;]'..
    'list[current_player;main;0,3;8,4;]'
 
 local press_running_formspec =
@@ -33,7 +35,8 @@ local press_running_formspec =
    'label[0.2,2.4;16 fruits to a bucket.]'..
    'button[1,1;2,1;press;Start Juicing]'..
    'list[current_name;src;6.5,.5;1,1;]'..
-   'list[current_name;dst;6.5,1.5;1,1;]'..
+   --'list[current_name;dst;6.5,1.5;1,1;]'..
+   'list[current_name;dst;6.5,1.5;2,1;]'..
    'list[current_player;main;0,3;8,4;]'
 
 local press_error_formspec =
@@ -46,7 +49,8 @@ local press_error_formspec =
    'label[0.2,2.4;16 fruits to a bucket.]'..
    'button[1,1;2,1;press;Start Juicing]'..
    'list[current_name;src;6.5,.5;1,1;]'..
-   'list[current_name;dst;6.5,1.5;1,1;]'..
+   --'list[current_name;dst;6.5,1.5;1,1;]'..
+   'list[current_name;dst;6.5,1.5;2,1;]'..
    'list[current_player;main;0,3;8,4;]'
 
 local function juice_press_on_receive_fields_need_more_fruit(meta)
@@ -191,7 +195,8 @@ minetest.register_node('drinks:juice_press', {
       local inv = meta:get_inventory()
       inv:set_size('main', 8*4)
       inv:set_size('src', 1)
-      inv:set_size('dst', 1)
+      --inv:set_size('dst', 1)
+      inv:set_size('dst', 2) -- slot 1: juice, slot 2: mash
       meta:set_string('infotext', 'Empty Juice Press')
       meta:set_string('formspec', press_idle_formspec)
    end,
@@ -202,6 +207,7 @@ minetest.register_node('drinks:juice_press', {
       local meta = minetest.get_meta(pos)
       local inv = meta:get_inventory()
       local timer = minetest.get_node_timer(pos)
+      assert(not timer:is_started())
       local instack = inv:get_stack("src", 1)
       local fruitstack = instack:get_name()
       local mod, fruit = fruitstack:match("([^:]+):([^:]+)")
@@ -211,6 +217,21 @@ minetest.register_node('drinks:juice_press', {
       --if not drinks.juiceable[fruit] then return end
       if not drinks.juiceable[fruitstack] then return end
       minetest.log('juiceable')
+
+      local mash_item = "drinks:mash_" .. fruit
+      local mash_out = inv:get_stack("dst", 2)
+
+      if not mash_out:is_empty() then
+          if mash_out:get_name() ~= mash_item then
+              meta:set_string('infotext', 'Clear the previous fruit mash first!')
+              return
+          end
+          if mash_out:get_free_space() == 0 then
+              meta:set_string('infotext', 'Mash output slot is full!')
+              return
+          end
+      end
+
       if string.find(fruit, '_') then
          local fruit, junk = fruit:match('([^_]+)_([^_]+)')
          meta:set_string('fruit', fruit)
@@ -235,9 +256,10 @@ minetest.register_node('drinks:juice_press', {
       local inv = meta:get_inventory()
       local container = meta:get_string('container')
       local instack = inv:get_stack("src", 1)
-      local outstack = inv:get_stack("dst", 1)
+      --local outstack = inv:get_stack("dst", 1) -- not used
       local fruit = meta:get_string('fruit')
       local fruitnumber = tonumber(meta:get_string('fruitnumber'))
+      -- TODO output fruit mash to second output slot
       if container == 'tube' then
          local timer = minetest.get_node_timer(pos)
          local under_node = {x=pos.x, y=pos.y-1, z=pos.z}
@@ -245,6 +267,24 @@ minetest.register_node('drinks:juice_press', {
          local under_node_2 = {x=pos.x, y=pos.y-2, z=pos.z}
          local under_node_name_2 = minetest.get_node_or_nil(under_node_2)
          if under_node_name.name == 'drinks:liquid_barrel' then
+
+	    local mash_item = "drinks:mash_" .. fruit
+            local mash_out = inv:get_stack('dst', 2)
+            local mash_to_add = math.max(1, math.floor(fruitnumber / 4)) -- 1 mash per 4 fruits
+
+            -- If someone obstructed the slot while juicing was in progress
+            if not mash_out:is_empty() and mash_out:get_name() ~= mash_item then
+               meta:set_string('infotext', 'Halted: Output obstructed by different item!')
+               minetest.get_node_timer(pos):start(2) -- Wait 2 seconds and try again
+               return
+            end
+
+            if mash_out:get_count() + mash_to_add > mash_out:get_stack_max() then
+               meta:set_string('infotext', 'Halted: Mash output is full!')
+               minetest.get_node_timer(pos):start(2) -- Wait 2 seconds and try again
+               return
+            end
+
             local meta_u = minetest.get_meta(under_node)
             local fullness = tonumber(meta_u:get_string('fullness'))
             instack:take_item(tonumber(fruitnumber))
@@ -265,6 +305,24 @@ minetest.register_node('drinks:juice_press', {
                end
             end
          elseif under_node_name_2.name == 'drinks:liquid_silo' then
+
+	    local mash_item = "drinks:mash_" .. fruit
+            local mash_out = inv:get_stack('dst', 2)
+            local mash_to_add = math.max(1, math.floor(fruitnumber / 4)) -- 1 mash per 4 fruits
+
+            -- If someone obstructed the slot while juicing was in progress
+            if not mash_out:is_empty() and mash_out:get_name() ~= mash_item then
+               meta:set_string('infotext', 'Halted: Output obstructed by different item!')
+               minetest.get_node_timer(pos):start(2) -- Wait 2 seconds and try again
+               return
+            end
+
+            if mash_out:get_count() + mash_to_add > mash_out:get_stack_max() then
+               meta:set_string('infotext', 'Halted: Mash output is full!')
+               minetest.get_node_timer(pos):start(2) -- Wait 2 seconds and try again
+               return
+            end
+
             local meta_u = minetest.get_meta(under_node_2)
             local fullness = tonumber(meta_u:get_string('fullness'))
             instack:take_item(tonumber(fruitnumber))
@@ -286,11 +344,38 @@ minetest.register_node('drinks:juice_press', {
             end
          end
       else
+
+	 local mash_item = "drinks:mash_" .. fruit
+         local mash_out = inv:get_stack('dst', 2)
+         local mash_to_add = math.max(1, math.floor(fruitnumber / 4)) -- 1 mash per 4 fruits
+
+         -- If someone obstructed the slot while juicing was in progress
+         if not mash_out:is_empty() and mash_out:get_name() ~= mash_item then
+             meta:set_string('infotext', 'Halted: Output obstructed by different item!')
+             minetest.get_node_timer(pos):start(2) -- Wait 2 seconds and try again
+             return
+         end
+
+         if mash_out:get_count() + mash_to_add > mash_out:get_stack_max() then
+             meta:set_string('infotext', 'Halted: Mash output is full!')
+             minetest.get_node_timer(pos):start(2) -- Wait 2 seconds and try again
+             return
+         end
+
          meta:set_string('infotext', 'Collect your juice.')
          meta:set_string('formspec', press_idle_formspec)
          instack:take_item(tonumber(fruitnumber))
          inv:set_stack('src', 1, instack)
          inv:set_stack('dst', 1 ,'drinks:'..container..fruit) -- 
+
+         -- Output 2: Mash (The new addition)
+	 local final_mash = ItemStack(mash_item .. " " .. mash_to_add)
+         if mash_out:is_empty() then
+             inv:set_stack('dst', 2, final_mash)
+         else
+             mash_out:add_item(final_mash)
+             inv:set_stack('dst', 2, mash_out)
+         end
       end
    end,
    on_metadata_inventory_take = function(pos, listname, index, stack, player)
@@ -317,24 +402,22 @@ minetest.register_node('drinks:juice_press', {
       end
    end,
    allow_metadata_inventory_put = function(pos, listname, index, stack, player)
-      if listname == 'dst' then
-         if stack:get_name() == ('bucket:bucket_empty') then
-            return 1
-         elseif stack:get_name() == ('wooden_bucket:bucket_wood_empty') then
-            return 1
-         elseif stack:get_name() == ('vessels:drinking_glass') then
-            return 1
-         elseif stack:get_name() == ('vessels:glass_bottle') then
-            return 1
-         elseif stack:get_name() == ('vessels:steel_bottle') then
-            return 1
-         elseif stack:get_name() == ('default:papyrus') then
-            return 1
-         else
-            return 0
-         end
+      if listname ~= 'dst' then return 99 end
+      if index ~= 1 then return 0 end
+      if stack:get_name() == ('bucket:bucket_empty') then
+         return 1
+      elseif stack:get_name() == ('wooden_bucket:bucket_wood_empty') then
+         return 1
+      elseif stack:get_name() == ('vessels:drinking_glass') then
+         return 1
+      elseif stack:get_name() == ('vessels:glass_bottle') then
+         return 1
+      elseif stack:get_name() == ('vessels:steel_bottle') then
+         return 1
+      elseif stack:get_name() == ('default:papyrus') then
+         return 1
       else
-         return 99
+         return 0
       end
    end,
 })
@@ -360,7 +443,8 @@ if minetest.get_modpath("appliances") and minetest.get_modpath("pipeworks") and 
         have_usage         = false,
 
         output_stack       = "output",
-        output_stack_size  = 1,
+        output_stack_size  = 2,
+        output_stack_width = 2,
     })
 
     -- 2. Data Registration
@@ -377,6 +461,19 @@ if minetest.get_modpath("appliances") and minetest.get_modpath("pipeworks") and 
         },
     })
 
+    -- Fix: Ensure the appliance outputs ALL items in the recipe (Juice + Mash)
+    -- instead of selecting just one at random.
+    function juice_press_lv:recipe_select_output(timer_step, outputs)
+        -- If the output is a function (dynamic), resolve it
+        if type(outputs) == "function" then
+            return outputs(self, timer_step)
+        end
+
+        -- Return the entire outputs table
+        -- This ensures both juice (index 1) and mash (index 2) are produced
+        return outputs
+    end
+
     -- 3. Recipe Registration Helper
     -- We map the manual juicing logic (fruit count + vessel) to the automated system
     --local function add_juice_recipe(fruit, vessel, fruit_count, result_prefix, time)
@@ -386,13 +483,19 @@ if minetest.get_modpath("appliances") and minetest.get_modpath("pipeworks") and 
         -- Note: drinks: prefixes the output based on container type (jcu_, jbo_, etc)
         local output_item = "drinks:" .. result_prefix .. fruit
 
+        local mash_item = "drinks:mash_" .. fruit -- Define the mash item based on the fruit name
+        local mash_count = math.max(1, math.floor(fruit_count / 4)) -- 1 mash per 4 fruits, matching manual logic
+
         if minetest.registered_items[fruit_item] and minetest.registered_items[vessel] then
             juice_press_lv:recipe_register_input("", {
                 inputs = {
                     [1] = fruit_item .. " " .. fruit_count,
                     [2] = vessel
                 },
-                outputs = {output_item},
+                outputs = {
+		    output_item,
+		    mash_item .. " " .. mash_count
+	        },
                 production_time = time,
                 consumption_step_size = 1,
             })
