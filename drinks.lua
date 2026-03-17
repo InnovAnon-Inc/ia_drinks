@@ -133,18 +133,22 @@ minetest.log('ENTER drinks/drinks.lua')
 
 for i in ipairs(drinks.drink_table) do
     local id    = drinks.drink_table[i][1] -- e.g., "apple"
+    assert(id ~= nil)
     local craft = drinks.drink_table[i][2] -- e.g., "Apple"
+    assert(craft ~= nil)
     local color = drinks.drink_table[i][3]
+    assert(color ~= nil)
     
     local name_str = craft .. " Juice"
+    assert(name_str ~= nil)
     
     -- Parameters common to all vessels for this liquid
-    local shared_params = {
-        color = color,
-        is_juice = true,
-        description = name_str,
-        groups = {juice = 1, drink = 1}
-    }
+    --local shared_params = {
+    --    color       = color,
+    --    description = name_str,
+    --    groups      = {juice = 1, drink = 1},
+    --    is_juice    = true,
+    --}
 
     -- 1. Register Liquid & Bucket
     -- This handles Source, Flowing, and the Bucket Item/Node
@@ -155,7 +159,7 @@ for i in ipairs(drinks.drink_table) do
     --placeable_buckets.register_liquid('drinks', color, id, shared_params)
     --placeable_buckets.register_liquid('drinks', color, id, shared_params) 
     --local modname    = 'drinks'
-    local color      = color
+    --local color      = color
     --local node_alpha = 100
     --local alpha      = 120
     --local item_id    = id -- TODO
@@ -201,9 +205,6 @@ for i in ipairs(drinks.drink_table) do
 --        return_item = 'vessels:steel_bottle'
 --    })
       -- Single call to register Source, Flowing, Bucket, Glass, Bottle, and Steel Bottle
-    assert(color ~= nil)
-    assert(id ~= nil)
-    assert(name_str ~= nil)
     placeable_buckets.register_liquid(
         'drinks',      -- modname
         color,         -- color
@@ -211,30 +212,41 @@ for i in ipairs(drinks.drink_table) do
         120,           -- alpha
         id,            -- item_id (used to generate :jcu_id, :jbo_id, etc.)
         name_str,      -- name
-        {juice = 1, drink = 1}, -- groups
-        'default:water_source', 'default:water_flowing', 'drinks:jbu_'..id, 'drinks:jbw_'..id)
-    placeable_buckets.register_drink_vessels('drinks', color, id, name_str, 1, 0,
+        {              -- groups
+		drink = 1,
+		flammable = 1,
+		juice = 1,
+	},
+        'default:water_source', 'default:water_flowing',
+	'drinks:jbu_'..id, 'drinks:jbw_'..id)
+    placeable_buckets.register_drink_vessels(
+	'drinks',      -- modname
+	color,         -- color
+	id,            -- item_id
+	name_str,      -- name
+	1, 0, -- TODO
         --'drinks:'..id..'_source', 'drinks:'..id..'_flowing', 'drinks:bucket_'..id, 'drinks:bucket_wooden_'..id)
-        'drinks:'..id..'_source', 'drinks:'..id..'_flowing', 'drinks:jbu_'..id, 'drinks:jbw_'..id)
+        'drinks:'..id..'_source', 'drinks:'..id..'_flowing',
+	'drinks:jbu_'..id, 'drinks:jbw_'..id)
         --'default:water_source', 'default:water_flowing')
 
-    local jcu_def         = minetest.registered_items['drinks:jcu_'..id]
-    jcu_def.juice_type    = craft
-    local jbo_def         = minetest.registered_items['drinks:jbo_'..id]
-    jbo_def.juice_type    = craft
-    local jsb_def         = minetest.registered_items['drinks:jsb_'..id]
-    jsb_def.juice_type    = craft
-    local jbu_def         = minetest.registered_items['drinks:jbu_'..id]
-    jbu_def.juice_type    = craft
-    local jbw_def         = minetest.registered_items['drinks:jbw_'..id]
-    jbw_def.juice_type    = craft
+    minetest.override_item('drinks:jcu_'..id, { juice_type = craft, })
+    minetest.override_item('drinks:jbo_'..id, { juice_type = craft, })
+    minetest.override_item('drinks:jsb_'..id, { juice_type = craft, })
+    minetest.override_item('drinks:jbu_'..id, { juice_type = craft, })
+    minetest.override_item('drinks:jbw_'..id, { juice_type = craft, })
     
     local mash_id = "drinks:mash_" .. id
     minetest.register_craftitem(mash_id, {
         description     = craft .. " Fruit Mash",
-        inventory_image = "drinks_fruit_mash.png^[colorize:" .. color .. ":120",
-        groups          = {food = 1,}, -- compostable = 1, flammable = 2,
+        inventory_image = "drinks_fruit_mash.png^[colorize:" .. color .. ":120", -- TODO
+        groups          = {
+ 		-- compostable = 1,
+		flammable = 2,
+		food = 1,
+	},
         on_use          = minetest.item_eat(1), -- It's edible but not great
+	juice_type      = craft,
         --_compost        = { -- TODO
         --  amount = amount,
         --  C      = C,
