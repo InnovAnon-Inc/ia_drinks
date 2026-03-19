@@ -234,7 +234,9 @@ for i in ipairs(drinks.drink_table) do
     minetest.override_item('drinks:jbo_'..id, { juice_type = craft, })
     minetest.override_item('drinks:jsb_'..id, { juice_type = craft, })
     minetest.override_item('drinks:jbu_'..id, { juice_type = craft, })
+    if ia_util.has_wooden_bucket_redo() then
     minetest.override_item('drinks:jbw_'..id, { juice_type = craft, })
+    end
     
     local mash_id = "drinks:mash_" .. id
     minetest.register_craftitem(mash_id, {
